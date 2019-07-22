@@ -18,10 +18,12 @@ class DecodeAnagram:
         self.letter_df.dropna(inplace=True)
         self.letter_df.drop_duplicates(inplace=True)
         self.anagrams = []
+        self.sums_values = []
 
     def __call__(self):
         self.get_possible_words()
         self.get_len_column()
+        self.words_sum(list(self.letter_df['length'].unique()), len(self.anagram), [])
 
     def get_possible_words(self) -> None:
         self.letter_df['is_possible'] = self.letter_df['word'].apply(self.word_is_possible)
@@ -40,10 +42,21 @@ class DecodeAnagram:
     def get_len_column(self):
         self.letter_df['length'] = self.letter_df['word'].apply(len)
 
-    def possible_new_words(self, word: str) -> None:
-        remaining_anagram = self.anagram_counter - Counter(word)
-
-        pass
+    def words_sum(self, numbers: list, target: int, partial: list) -> None:
+        """
+        from stackoverflow.com/questions/4632322/finding-all-possible-combinations-of-numbers-to-reach-a-given-sum
+        This function will give us the possible sums that add to the right length of the original anagram
+        """
+        # def subset_sum(numbers, target, partial=[]):
+        current_sum = sum(partial)
+        if current_sum == target:
+            self.sums_values.append(partial)
+        if current_sum >= target:
+            return None
+        for i in range(len(numbers)):
+            n = numbers[i]
+            remaining = numbers[i + 1:]
+            self.words_sum(remaining, target, partial + [n])
 
 
 """
