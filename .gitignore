@@ -1,0 +1,32 @@
+credijusto2/
+credijusto/
+params.json
+.idea/
+__pycache__/
+nlp_tools.pyc
+params.pyc
+
+src/pip-delete-this-directory.txt
+utils.pyc
+*src
+*.pyc
+datasource-cache/*
+dash-cache/*
+
+# Mac OS
+*.DS_Store
+
+# PyCharm
+.idea/
+.pycharmrc
+
+docker-compose.override.yml
+
+gource.sh
+.vscode/
+
+# VIM
+*.swp
+*.swo
+
+zabludovsky/custom_reports/test/datasource-cache/*
