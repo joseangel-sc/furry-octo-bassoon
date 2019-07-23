@@ -3,17 +3,18 @@ from collections import Counter
 import pandas as pd
 
 
-class DecodeAnagram:
+class PossibleWords:
     """
     This class gets a list of letters, in some random order, generates the possible
     anagrams and then delivers the anagram that matches the right hash to the answer
     """
 
-    def __init__(self, anagram: str, desire_hashes: list) -> None:
+    def __init__(self, anagram: str, desire_hashes: list,
+                 words_to_choose_from: pd.DataFrame = pd.read_csv('wordlist.txt', sep=" ", header=None)) -> None:
         self.anagram = anagram.replace(' ', '')
         self.anagram_counter = Counter(self.anagram)
         self.desire_hashes = desire_hashes
-        self.letter_df = pd.read_csv('wordlist.txt', sep=" ", header=None)
+        self.letter_df = words_to_choose_from
         self.letter_df.columns = ['word']
         self.letter_df.dropna(inplace=True)
         self.letter_df.drop_duplicates(inplace=True)
@@ -22,8 +23,9 @@ class DecodeAnagram:
 
     def __call__(self):
         self.get_possible_words()
-        self.get_len_column()
-        self.words_sum(list(self.letter_df['length'].unique()), len(self.anagram), [])
+        return self.letter_df
+        # self.get_len_column()
+        # self.words_sum(list(self.letter_df['length'].unique()), len(self.anagram), [])
 
     def get_possible_words(self) -> None:
         self.letter_df['is_possible'] = self.letter_df['word'].apply(self.word_is_possible)
@@ -39,24 +41,31 @@ class DecodeAnagram:
         word_counter = Counter(word)
         return self.anagram_counter & word_counter == word_counter
 
-    def get_len_column(self):
-        self.letter_df['length'] = self.letter_df['word'].apply(len)
-
-    def words_sum(self, numbers: list, target: int, partial: list) -> None:
-        """
-        from stackoverflow.com/questions/4632322/finding-all-possible-combinations-of-numbers-to-reach-a-given-sum
-        This function will give us the possible sums that add to the right length of the original anagram
-        """
-        # def subset_sum(numbers, target, partial=[]):
-        current_sum = sum(partial)
-        if current_sum == target:
-            self.sums_values.append(partial)
-        if current_sum >= target:
-            return None
-        for i in range(len(numbers)):
-            n = numbers[i]
-            remaining = numbers[i + 1:]
-            self.words_sum(remaining, target, partial + [n])
+    # def words_sum(self, numbers: list, target: int, partial: list) -> None:
+    #     """
+    #     from stackoverflow.com/questions/4632322/finding-all-possible-combinations-of-numbers-to-reach-a-given-sum
+    #     This function will give us the possible sums that add to the right length of the original anagram
+    #     """
+    #     # def subset_sum(numbers, target, partial=[]):
+    #     current_sum = sum(partial)
+    #     if current_sum == target:
+    #         self.sums_values.append(partial)
+    #     if current_sum >= target:
+    #         return None
+    #     for i in range(len(numbers)):
+    #         n = numbers[i]
+    #         remaining = numbers[i + 1:]
+    #         self.words_sum(remaining, target, partial + [n])
+    #
+    # def get_len_column(self):
+    #     self.letter_df['length'] = self.letter_df['word'].apply(len)
+    #
+    # def group_sums(self, sum_array: list) -> None:
+    #     mask = self.letter_df['length'].isin(sum_array)
+    #     df = self.letter_df[mask]
+    #     import ipdb
+    #     ipdb.set_trace()
+    #     pass
 
 
 """
