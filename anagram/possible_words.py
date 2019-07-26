@@ -9,11 +9,9 @@ class PossibleWords:
     anagrams and then delivers the anagram that matches the right hash to the answer
     """
 
-    def __init__(self, anagram: str, desire_hashes: list,
+    def __init__(self, anagram: Counter,
                  words_to_choose_from: pd.DataFrame = pd.read_csv('wordlist.txt', sep=" ", header=None)) -> None:
-        self.anagram = anagram.replace(' ', '')
-        self.anagram_counter = Counter(self.anagram)
-        self.desire_hashes = desire_hashes
+        self.anagram_counter = anagram
         self.letter_df = words_to_choose_from
         self.letter_df.columns = ['word']
         self.letter_df.dropna(inplace=True)
@@ -23,8 +21,11 @@ class PossibleWords:
 
     def __call__(self):
         self.get_possible_words()
+        self.counter_columns()
+        self.get_len_column()
+        self.split_values()
         return self.letter_df
-        # self.get_len_column()
+
         # self.words_sum(list(self.letter_df['length'].unique()), len(self.anagram), [])
 
     def get_possible_words(self) -> None:
@@ -33,6 +34,9 @@ class PossibleWords:
         self.letter_df.drop(['is_possible'], inplace=True, axis=1)
         self.letter_df.reset_index(inplace=True, drop=True)
 
+    def counter_columns(self) -> None:
+        self.letter_df['counter'] = self.letter_df['word'].apply(PossibleWords.count_letters)
+
     def word_is_possible(self, word: str) -> bool:
         """
         :return: if a word is a possible anagram from some subset of letters from original
@@ -40,6 +44,14 @@ class PossibleWords:
         """
         word_counter = Counter(word)
         return self.anagram_counter & word_counter == word_counter
+
+    @staticmethod
+    def count_letters(word) -> dict:
+        """
+        Given a word, creates the corresponding dict of the Counter object
+        :return: str
+        """
+        return dict(Counter(word))
 
     # def words_sum(self, numbers: list, target: int, partial: list) -> None:
     #     """
@@ -57,15 +69,13 @@ class PossibleWords:
     #         remaining = numbers[i + 1:]
     #         self.words_sum(remaining, target, partial + [n])
     #
-    # def get_len_column(self):
-    #     self.letter_df['length'] = self.letter_df['word'].apply(len)
-    #
-    # def group_sums(self, sum_array: list) -> None:
-    #     mask = self.letter_df['length'].isin(sum_array)
-    #     df = self.letter_df[mask]
-    #     import ipdb
-    #     ipdb.set_trace()
-    #     pass
+    def get_len_column(self):
+        self.letter_df['length'] = self.letter_df['word'].apply(len)
+
+    def split_values(self):
+        self.letter_df = pd.concat([self.letter_df.drop(['counter'], axis=1), self.letter_df['counter'].apply(pd.Series)], axis=1)
+        self.letter_df.fillna(0, inplace=True)
+
 
 
 """
@@ -79,3 +89,4 @@ Here is a couple of important hints to help you out:
 - The MD5 hash of the hard secret phrase is "665e5bcb0c20062fe8abaaf4628bb154"
 
 """
+
