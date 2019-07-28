@@ -18,12 +18,15 @@ class PossibleWords:
         self.letter_df.drop_duplicates(inplace=True)
         self.anagrams = []
         self.sums_values = []
+        self.least_common = min(anagram, key=anagram.get)
+        self.most_common = max(anagram, key=anagram.get)
 
     def __call__(self):
         self.get_possible_words()
         self.counter_columns()
         self.get_len_column()
         self.split_values()
+        self.mixins()
         return self.letter_df
 
         # self.words_sum(list(self.letter_df['length'].unique()), len(self.anagram), [])
@@ -76,6 +79,16 @@ class PossibleWords:
         self.letter_df = pd.concat([self.letter_df.drop(['counter'], axis=1), self.letter_df['counter'].apply(pd.Series)], axis=1)
         self.letter_df.fillna(0, inplace=True)
 
+    def mixins(self):
+        mask_least = self.letter_df[self.least_common] > 0
+        mask_most = self.letter_df[self.most_common] > 0
+        #we know this can't go with each other
+        least_common_df = self.letter_df[mask_least]
+        most_common_df = self.letter_df[mask_most]
+        most_common_that_dont_mix = pd.merge(most_common_df, least_common_df, how='inner')
+        import ipdb
+        ipdb.set_trace()
+        most_common_that_mix = most_common_df[~most_common_df["word"].isin(most_common_that_dont_mix["word"])].copy()
 
 
 """
