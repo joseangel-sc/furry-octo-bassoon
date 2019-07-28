@@ -1,4 +1,5 @@
 from collections import Counter
+from typing import Tuple
 
 import pandas as pd
 
@@ -9,24 +10,27 @@ class PossibleWords:
     anagrams and then delivers the anagram that matches the right hash to the answer
     """
 
-    def __init__(self, anagram: Counter,
+    def __init__(self, anagram: str,
                  words_to_choose_from: pd.DataFrame = pd.read_csv('wordlist.txt', sep=" ", header=None)) -> None:
-        self.anagram_counter = anagram
+        self.anagram_counter = Counter(sorted(anagram))
         self.letter_df = words_to_choose_from
         self.letter_df.columns = ['word']
         self.letter_df.dropna(inplace=True)
         self.letter_df.drop_duplicates(inplace=True)
         self.anagrams = []
         self.sums_values = []
-        self.least_common = min(anagram, key=anagram.get)
-        self.most_common = max(anagram, key=anagram.get)
+        self.least_common = min(self.anagram_counter, key=self.anagram_counter.get)
+        self.most_common = max(self.anagram_counter, key=self.anagram_counter.get)
+        self.most_common_that_mix = pd.DataFrame()
+        self.most_common_that_dont_mix = pd.DataFrame()
 
     def __call__(self):
         self.get_possible_words()
         self.counter_columns()
         self.get_len_column()
         self.split_values()
-        self.mixins()
+        self.one_appearance_vs_most_common_dfs()
+        self.generate_groups_that_mix()
         return self.letter_df
 
         # self.words_sum(list(self.letter_df['length'].unique()), len(self.anagram), [])
@@ -76,19 +80,36 @@ class PossibleWords:
         self.letter_df['length'] = self.letter_df['word'].apply(len)
 
     def split_values(self):
-        self.letter_df = pd.concat([self.letter_df.drop(['counter'], axis=1), self.letter_df['counter'].apply(pd.Series)], axis=1)
+        self.letter_df = pd.concat(
+            [self.letter_df.drop(['counter'], axis=1), self.letter_df['counter'].apply(pd.Series)], axis=1)
         self.letter_df.fillna(0, inplace=True)
 
-    def mixins(self):
-        mask_least = self.letter_df[self.least_common] > 0
+    def one_appearance_vs_most_common_dfs(self) -> None:
         mask_most = self.letter_df[self.most_common] > 0
-        #we know this can't go with each other
-        least_common_df = self.letter_df[mask_least]
+        mask_least = self.letter_df[self.least_common] > 0
         most_common_df = self.letter_df[mask_most]
-        most_common_that_dont_mix = pd.merge(most_common_df, least_common_df, how='inner')
+        least_common_df = self.letter_df[mask_least]
+        self.most_common_that_dont_mix = pd.merge(most_common_df, least_common_df, how='inner')
+        self.most_common_that_mix = most_common_df[
+            ~most_common_df["word"].isin(self.most_common_that_dont_mix["word"])].copy()
+
+    def generate_groups_that_mix(self) -> dict:
+        new_dfs = {}
+        values_with_one = {k: v for k, v in self.anagram_counter.items() if v == 1 and v != self.least_common}
+        do_mix = self.most_common_that_mix
+        for letter in values_with_one:
+            dont_mix, do_mix = PossibleWords._create_not_mixer_df(do_mix, letter)
+            new_dfs[letter] = dont_mix
         import ipdb
         ipdb.set_trace()
-        most_common_that_mix = most_common_df[~most_common_df["word"].isin(most_common_that_dont_mix["word"])].copy()
+        return new_dfs
+
+    @staticmethod
+    def _create_not_mixer_df(not_classified: pd.DataFrame, letter: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        letter_mask = not_classified[letter] > 0
+        contains_letter = not_classified[letter_mask]
+        not_letter = not_classified[~letter_mask]
+        return contains_letter, not_letter
 
 
 """
@@ -102,4 +123,3 @@ Here is a couple of important hints to help you out:
 - The MD5 hash of the hard secret phrase is "665e5bcb0c20062fe8abaaf4628bb154"
 
 """
-
